@@ -19,10 +19,10 @@ def distribute(min, max, total, current):
     block = random.randrange(min, max+1)
     return [block] + distribute(min, max, total, current+block)
 
-def bar(color, size):
+def block(color, size):
     return "\033[0;{}m{}".format(color, " " * size) 
 
-def bars(max_width, min_width, color_same_row, gap_prob):
+def blocks(max_width, min_width, color_same_row, gap_prob):
     """
     output the blocks
     the width and height of the terminal is calculated, and then a distribution
@@ -38,7 +38,7 @@ def bars(max_width, min_width, color_same_row, gap_prob):
         for size in blocks:
             gap = random.random() <= gap_prob
             color = row_color if color_same_row else (40 if gap else random.choice(colors))
-            code = bar(color, size) 
+            code = block(color, size) 
             echo(code) 
     echo('\033[?25l')
     input()
@@ -46,9 +46,9 @@ def bars(max_width, min_width, color_same_row, gap_prob):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--max-width','-max',help="set max width of a bar",type=int,default=10)
-    parser.add_argument('--min-width','-min',help="set the min width of a bar",type=int,default=2)
+    parser.add_argument('--max-width','-max',help="set max width of a block",type=int,default=10)
+    parser.add_argument('--min-width','-min',help="set the min width of a block",type=int,default=2)
     parser.add_argument('--color-same-row','-s',help="limit color randomness to be between rows, instead of within rows",action='store_true')
     parser.add_argument('--gap-prob','-gp',help='probablility of a block being a gap',type=float,default=0.3)
     args = parser.parse_args()
-    bars(**vars(args))
+    blocks(**vars(args))

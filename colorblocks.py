@@ -4,13 +4,18 @@ import argparse
 import random
 import subprocess
 
+COLORS = range(41, 48)
 clear = lambda: subprocess.call('clear')
 echo = lambda s: print(s, end="")
+block = lambda color, size: "\033[0;{}m{}".format(color, " " * size)
+termxy = lambda: map(int, subprocess.check_output(['stty','size']).split())
+showcur = lambda vis: echo('\033[?25{}'.format('h' if vis else 'l'))
+get_color = lambda row_color, gap, row: \
+    40 if random.random() <= gap else row_color if row else random.choice(COLORS)
 
 def distribute(min, max, total, current):
     """
-    generate a list of numbers between `min` and `max` 
-    until they add up to `total`
+    generate a list of numbers between `min` and `max` that add up to `total`
     """
     if current == total:
         return [0]
@@ -19,41 +24,36 @@ def distribute(min, max, total, current):
     block = random.randrange(min, max+1)
     return [block] + distribute(min, max, total, current+block)
 
-def block(color, size):
-    return "\033[0;{}m{}".format(color, " " * size) 
-
-def blocks(max_width, min_width, color_same_row, gap_prob):
+def blocks(min, max, same, gap):
     """
-    output the blocks
     the width and height of the terminal is calculated, and then a distribution
     of blocks is calculated and printed to perfectly fill the terminal
     """
+    if min > max:
+        raise ValueError('min-width must be less than or equal to max-width')  
     try:
-        rows, cols = map(int, subprocess.check_output(['stty','size']).split())
-        colors = range(41, 48)
+        rows, cols = termxy()
         for row in range(rows):
-            blocks = distribute(min_width, max_width, cols, 0)
+            blocks = distribute(min, max, cols, 0)
             random.shuffle(blocks)
-            row_color = random.choice(colors)
+            row_color = random.choice(COLORS)
             for size in blocks:
-                gap = random.random() <= gap_prob
-                color = row_color if color_same_row else (40 if gap else random.choice(colors))
-                code = block(color, size) 
-                echo(code) 
-        echo('\033[?25l')
+                color = get_color(row_color, gap, same)
+                echo(block(color, size)) 
+
+        showcur(False)
         input()
     except KeyboardInterrupt:
-        echo('\033[?25h')
-        clear()
+        pass
     finally:
-        echo('\033[?25h')
+        showcur(True)
         clear()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--max-width','-max',help="set max width of a block",type=int,default=10)
-    parser.add_argument('--min-width','-min',help="set the min width of a block",type=int,default=2)
-    parser.add_argument('--color-same-row','-s',help="limit color randomness to be between rows, instead of within rows",action='store_true')
-    parser.add_argument('--gap-prob','-gp',help='probablility of a block being a gap',type=float,default=0.3)
-    args = parser.parse_args()
-    blocks(**vars(args))
+    add = parser.add_argument
+    add('-min',help="set the min width of a block",type=int,default=2)
+    add('-max',help="set max width of a block",type=int,default=10)
+    add('-same',help="make all blocks within a row have the same color",action='store_true')
+    add('-gap',help='probablility of a block being a gap',type=float,default=0.3)
+    blocks(**vars(parser.parse_args()))

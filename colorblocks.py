@@ -28,21 +28,26 @@ def blocks(max_width, min_width, color_same_row, gap_prob):
     the width and height of the terminal is calculated, and then a distribution
     of blocks is calculated and printed to perfectly fill the terminal
     """
-    clear()
-    rows, cols = map(int, subprocess.check_output(['stty','size']).split())
-    colors = range(41, 48)
-    for row in range(rows):
-        blocks = distribute(min_width, max_width, cols, 0)
-        random.shuffle(blocks)
-        row_color = random.choice(colors)
-        for size in blocks:
-            gap = random.random() <= gap_prob
-            color = row_color if color_same_row else (40 if gap else random.choice(colors))
-            code = block(color, size) 
-            echo(code) 
-    echo('\033[?25l')
-    input()
-    echo('\033[?25h')
+    try:
+        rows, cols = map(int, subprocess.check_output(['stty','size']).split())
+        colors = range(41, 48)
+        for row in range(rows):
+            blocks = distribute(min_width, max_width, cols, 0)
+            random.shuffle(blocks)
+            row_color = random.choice(colors)
+            for size in blocks:
+                gap = random.random() <= gap_prob
+                color = row_color if color_same_row else (40 if gap else random.choice(colors))
+                code = block(color, size) 
+                echo(code) 
+        echo('\033[?25l')
+        input()
+    except KeyboardInterrupt:
+        echo('\033[?25h')
+        clear()
+    finally:
+        echo('\033[?25h')
+        clear()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

@@ -54,9 +54,9 @@ def blocks(min, max, gap, same, char):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     add = parser.add_argument
-    add('-min',help="set the min width of a block",type=int,default=4)
-    add('-max',help="set the max width of a block",type=int,default=10)
-    add('-gap',help='probablility of a block being a gap',type=float,default=0.3)
-    add('-same',help="make all blocks within a row have the same color",action='store_true')
-    add('-char',help="the character that composes a block, default is a block",default="▉")
+    add('-m','--min',help="set the min width of a block",type=int,default=4)
+    add('-M','--max',help="set the max width of a block",type=int,default=10)
+    add('-g','--gap',help='probablility of a block being a gap',type=float,default=0.3)
+    add('-s','--same',help="make all blocks within a row have the same color",action='store_true')
+    add('-c','--char',help="the character that composes a block, default is a block",default="▉")
     blocks(**vars(parser.parse_args()))

@@ -1,24 +1,32 @@
 #!/bin/env python3
+"""colorblocks.py - output random colored blocks 
 
-import argparse
+Usage: 
+    colorblocks.py [-m MIN] [-M MAX] [-g GAP] [-c CH] [-s]
+
+Options:
+    -m MIN, --min MIN  Set the min width of a block [default: 4]
+    -M MAX, --max MAX  Set the max width of a block [default: 10]
+    -g GAP, --gap GAP  Set the probability of a block being a gap [default: 0.3]
+    -c CH, --char CH   Set the character that composes a block. [default:  ]
+    -s, --same         Make all blocks within a row have the same color
+
+"""
+from docopt import docopt
 import random
 import subprocess
 
-COLORS = range(31, 38)
-clear = lambda: subprocess.call(['tput','reset'])
 echo = lambda s: print(s, end="")
-termxy = lambda: map(int, subprocess.check_output(['stty','size']).split())
-showcur = lambda vis: echo('\033[?25{}'.format('h' if vis else 'l'))
+rand_fg = lambda: random.choice(range(31,38))
 
-def block(gap, size, row_color, same, char):
-    """
-    generate a block, which is either a space (" ") colored with the default
-    background color, or a char (defaults to ▉) colored with a random color.
-    """
-    colored = gap <= random.random()
-    color = 49 if not colored else row_color if same else random.choice(COLORS)
-    char = char if colored else " "
-    return "\033[0;{}m{}".format(color, char * size)
+class canvas():
+    def __init__(self):
+        self.size = map(int, subprocess.check_output(['stty','size']).split())
+    def __enter__(self):
+        echo('\033[?25l') 
+        return self.size
+    def __exit__(self, type, value, traceback):
+        subprocess.call('tput reset'.split())
 
 def distribute(min, max, total, current=0):
     """
@@ -29,34 +37,22 @@ def distribute(min, max, total, current=0):
     block = random.choice(range(min, max+1))
     return [block] + distribute(min, max, total, current+block)
 
-def blocks(min, max, gap, same, char):
-    """
-    the width and height of the terminal is calculated, and then a distribution
-    of blocks is calculated and printed to perfectly fill the terminal
-    """
-    if min > max:
-        raise ValueError('min-width must be less than or equal to max-width')  
-    rows, cols = termxy()
-    try:
-        for row in range(rows):
-            row_color = random.choice(COLORS)
-            for size in distribute(min, max, cols):
-                echo(block(gap, size, row_color, same, char))
-
-        showcur(False)
-        input()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        showcur(True)
-        clear()
-
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    add = parser.add_argument
-    add('-m','--min',help="set the min width of a block",type=int,default=4)
-    add('-M','--max',help="set the max width of a block",type=int,default=10)
-    add('-g','--gap',help='probablility of a block being a gap',type=float,default=0.3)
-    add('-s','--same',help="make all blocks within a row have the same color",action='store_true')
-    add('-c','--char',help="the character that composes a block, default is a block",default="▉")
-    blocks(**vars(parser.parse_args()))
+    args = {k[2:]:v for k,v in docopt(__doc__).items()}
+    min,max,gap = int(args['min']),int(args['max']), float(args['gap'])
+
+    if min > max:
+        raise ValueError('min must be less than max')
+
+    with canvas() as (rows, cols): 
+        for row in range(rows):
+            row_color = rand_fg()
+            for size in distribute(min, max, cols):
+                colored = gap <= random.random()
+                same, char = args['same'],args['char']
+                color = (row_color if same else rand_fg()) if colored else 49
+                char = char if colored else " "
+                if colored and char == " ":
+                    color+=10 
+                echo("\033[{}m{}".format(color, char * size))
+        input()

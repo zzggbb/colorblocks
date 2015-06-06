@@ -31,6 +31,7 @@ class canvas():
         return self.size
     def __exit__(self, type, value, traceback):
         subprocess.call('tput reset'.split())
+        return True
 
 def distribute(min, max, total, current=0):
     """

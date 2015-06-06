@@ -33,18 +33,19 @@ class canvas():
         subprocess.call('tput reset'.split())
         return True
 
-def distribute(min, max, total, current=0):
+def distribute(min, max, total):
     """
     generate a list of numbers between `min` and `max` that adds up to `total`
     """
-    if total - current < max:
-        return [total - current]
+    if total < max:
+        return [total]
     block = random.choice(range(min, max+1))
-    return [block] + distribute(min, max, total, current+block)
+    return [block] + distribute(min, max, total-block )
 
 if __name__ == '__main__':
     args = {k[2:]:v for k,v in docopt(__doc__).items()}
     min,max,gap = int(args['min']),int(args['max']), float(args['gap'])
+    same, char = args['same'],args['char']
 
     if min > max:
         raise ValueError('min must be less than max')
@@ -54,7 +55,6 @@ if __name__ == '__main__':
             row_color = rand_fg()
             for size in distribute(min, max, cols):
                 colored = gap <= random.random()
-                same, char = args['same'],args['char']
                 color = (row_color if same else rand_fg()) if colored else 49
                 char = char if colored else " "
                 if colored and char == " ":
